@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>All Bills</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css"
+        integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <style>
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background: #f4f4f4;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: auto;
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        h2 {
+            text-align: center;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th,
+        td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #ddd;
+            text-align: left;
+        }
+
+        th {
+            background: #2c3e50;
+            color: white;
+        }
+
+        tr:hover {
+            background: #f1f1f1;
+        }
+
+        .status {
+            padding: 5px 10px;
+            border-radius: 4px;
+            font-weight: bold;
+            display: inline-block;
+        }
+
+        .Paid {
+            background: #27ae60;
+            color: white;
+        }
+
+        .Unpaid {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .Partial {
+            background: #f39c12;
+            color: white;
+        }
+
+        .actions button {
+            margin-right: 5px;
+            padding: 6px 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        .view-btn {
+            background: #3498db;
+            color: white;
+        }
+
+        .delete-btn {
+            background: #e74c3c;
+            color: white;
+        }
+
+        .print-btn {
+            background: #2ecc71;
+            color: white;
+        }
+
+        /* Modal styles */
+        #modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.6);
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: white;
+            padding: 25px;
+            border-radius: 8px;
+            min-width: 300px;
+            max-width: 500px;
+        }
+
+        .modal-content h3 {
+            margin-top: 0;
+        }
+
+        .modal-content p {
+            margin: 5px 0;
+        }
+
+        .close-btn {
+            background: #777;
+            color: white;
+            float: right;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+
+            #printSection,
+            #printSection * {
+                visibility: visible;
+            }
+
+            #printSection {
+                position: absolute;
+                left: 0;
+                top: 0;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h2>Billing Records</h2>
+        <table id="billsTable">
+            <thead>
+                <tr>
+                    <th>Bill ID</th>
+                    <th>Patient</th>
+                    <th>Amount</th>
+                    <th>Billing Date</th>
+                    <th>Payment Date</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+        <form action="/home"><button class="btn btn-outline-dark mt-3">Back</button></form>
+    </div>
+
+    <!-- Modal for viewing -->
+    <div id="modal">
+        <div class="modal-content">
+            <button class="close-btn" onclick="document.getElementById('modal').style.display='none'">Close</button>
+            <h3>Bill Details</h3>
+            <div id="modalDetails"></div>
+        </div>
+    </div>
+
+    <!-- Hidden printable section -->
+    <div id="printSection" style="display:none;"></div>
+
+
+    <script>
+        fetch("http://localhost:6060/bills")
+            .then(res => res.json())
+            .then(data => {
+                const tbody = document.querySelector("#billsTable tbody");
+                data.forEach(bill => {
+                    const tr = document.createElement("tr");
+
+                    tr.innerHTML = `
+            <td>${bill.bill_id}</td>
+            <td>${bill.patient_name}</td>
+            <td>₹${parseFloat(bill.amount).toFixed(2)}</td>
+            <td>${new Date(bill.billing_date).toLocaleDateString()}</td>
+            <td>${new Date(bill.payment_date).toLocaleDateString()}</td>
+            <td><span class="status ${bill.status_bill}">${bill.status_bill}</span></td>
+            <td class="actions">
+              <button class="view-btn" onclick='viewBill(${JSON.stringify(bill)})'>View</button>
+              <button class="delete-btn" onclick='deleteBill(${bill.bill_id}, this)'>Delete</button>
+              <button class="print-btn" onclick='printBill(${JSON.stringify(bill)})'>Print</button>
+            </td>
+          `;
+
+                    tbody.appendChild(tr);
+                });
+            });
+
+        function viewBill(bill) {
+            const detail = `
+        <p><strong>Patient:</strong> ${bill.patient_name}</p>
+        <p><strong>Amount:</strong> ₹${bill.amount}</p>
+        <p><strong>Billing Date:</strong> ${new Date(bill.billing_date).toLocaleDateString()}</p>
+        <p><strong>Payment Date:</strong> ${new Date(bill.payment_date).toLocaleDateString()}</p>
+        <p><strong>Status:</strong> ${bill.status_bill}</p>
+      `;
+            document.getElementById("modalDetails").innerHTML = detail;
+            document.getElementById("modal").style.display = "flex";
+        }
+
+        function deleteBill(id, btn) {
+            if (!confirm("Are you sure you want to delete this bill?")) return;
+            fetch(`http://localhost:6060/delete-bill/${id}`, { method: "DELETE" })
+                .then(res => res.text())
+                .then(msg => {
+                    alert(msg);
+                    btn.closest("tr").remove();
+                });
+        }
+
+        function printBill(bill) {
+            const html = `
+        <h2>Billing Receipt</h2>
+        <p><strong>Bill ID:</strong> ${bill.bill_id}</p>
+        <p><strong>Patient:</strong> ${bill.patient_name}</p>
+        <p><strong>Amount:</strong> ₹${bill.amount}</p>
+        <p><strong>Billing Date:</strong> ${bill.billing_date}</p>
+        <p><strong>Payment Date:</strong> ${bill.payment_date}</p>
+        <p><strong>Status:</strong> ${bill.status_bill}</p>
+        <p>-------------------------------------</p>
+        <p>Thank you!</p>
+      `;
+            const printSection = document.getElementById("printSection");
+            printSection.innerHTML = html;
+            window.print();
+        }
+    </script>
+
+</body>
+
+</html>
