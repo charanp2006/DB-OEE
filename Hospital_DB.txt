@@ -1,0 +1,141 @@
+## Create commands for creating database
+
+CREATE database Hospital_DB;
+Use Hospital_DB;
+
+create table patients
+(
+patients_id int primary key auto_increment,
+Name varchar(255),
+Age int,
+Gender varchar(255),
+Phone varchar(255),
+Email varchar(255),
+Address varchar(255),
+Date_registered date
+);
+
+create table Doctors
+(
+doctor_id int primary key auto_increment,
+Name varchar(255),
+specialization varchar(255),
+department varchar(255),
+Phone varchar(255),
+email varchar(255),
+experience_years int
+); 
+
+create table appointments
+(
+appointment_id int primary key auto_increment,
+patient_id int,
+doctor_id int,
+appointment_date date,
+appointment_time time,
+status_appointment varchar(255),
+foreign key(patient_id) references patients(patients_id),
+foreign key(doctor_id) references Doctors(doctor_id)
+); 
+
+create table staff
+(
+staff_id int primary key auto_increment,
+Name varchar(255),
+role varchar(255),
+Phone varchar(255),
+email varchar(255),
+department varchar(255)
+);
+
+create table medical_record
+(
+record_id int primary key auto_increment,
+patient_id int,
+doctor_id int,
+diagnosis varchar(255),
+treatment varchar(255),
+prescription varchar(255),
+date_of_visit date,
+foreign key(patient_id) references patients(patients_id),
+foreign key(doctor_id) references Doctors(doctor_id)
+);
+
+create table billing
+(
+bill_id int primary key auto_increment,
+patient_id int,
+amount decimal(8,2),
+billing_date date,
+payment_date varchar(255),
+status_bill varchar(255) 
+);
+
+select * from patients;	
+insert into doctors values(1,'Dr.Raghav Rai','Dermatology','Skin','9563221556','raghav@gmail.com',5);
+select count(*) from patients;
+select * from appointments;
+SET SQL_SAFE_UPDATES = 0;
+delete from appointments;
+ALTER TABLE appointments MODIFY COLUMN status_appointment VARCHAR(50) DEFAULT 'pending';
+
+ALTER TABLE medical_record ADD COLUMN appointment_id INT;
+
+ALTER TABLE medical_record ADD CONSTRAINT fk_appointment_id
+FOREIGN KEY (appointment_id) REFERENCES appointments(appointment_id);
+
+select * from medical_record;
+alter table billing add column appointment_id int;
+ALTER TABLE billing
+ADD CONSTRAINT billing_appointment_id
+FOREIGN KEY (appointment_id) REFERENCES appointments(appointment_id);
+
+ALTER TABLE billing MODIFY COLUMN status_bill VARCHAR(50) DEFAULT 'unpaid';
+alter table billing add column payment_method VARCHAR(50)  ;
+alter table billing change amount total_amount decimal(8,2);
+alter table billing add column treatment_id decimal(8,2)  ;
+alter table billing add column medicine_id decimal(8,2)  ;
+alter table billing add column consultation_fee decimal(8,2) ;
+
+select * from billing;
+alter table billing change medicine_id medicine_amount decimal(8,2);
+alter table billing drop foreign key patient_id;
+select * from billing;
+drop table billing;
+
+create table billing
+(
+bill_id int primary key auto_increment,
+appointment_id int,
+consultation_fee decimal(10,2),
+treatment_fee decimal(10,2),
+medicine_fee decimal(10,2),
+total_amount decimal(10,2),
+payment_status varchar(20) default "unpaid",
+date_of_bill date,
+foreign key (appointment_id) references appointments(appointment_id)
+);
+
+drop table staff;
+
+
+
+CREATE TABLE billing (
+    bill_id INT PRIMARY KEY AUTO_INCREMENT,
+    appointment_id INT,
+    patient_id INT,
+    consultation_fee DECIMAL(10,2),
+    treatment_fee DECIMAL(10,2),
+    medicine_fee DECIMAL(10,2),
+    total_amount DECIMAL(10,2),
+    billing_date DATE,
+    payment_status VARCHAR(20) DEFAULT 'unpaid',
+    payment_date DATE,
+    mode_of_payment VARCHAR(50),
+    FOREIGN KEY (appointment_id) REFERENCES appointments(appointment_id),
+    FOREIGN KEY (patient_id) REFERENCES patients(patients_id)
+);
+
+alter table billing add column Name varchar(50);
+
+select * from billing;
